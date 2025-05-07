@@ -48,57 +48,57 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     scene.add(ambientLight);
     
     // Add directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
     
     // Earth texture loader
     const textureLoader = new THREE.TextureLoader();
+    const earthTexture = textureLoader.load('/earth-texture.jpg');
+    const bumpMap = textureLoader.load('/earth-bump.jpg');
+    const specularMap = textureLoader.load('/earth-specular.jpg');
+    const cloudsTexture = textureLoader.load('/earth-clouds.png');
     
     // Earth geometry and material
     const earthGeometry = new THREE.SphereGeometry(80, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x0077be, // Ocean blue
-      shininess: 50,
-      transparent: true,
-      opacity: 0.9,
+      map: earthTexture,
+      bumpMap: bumpMap,
+      bumpScale: 0.5,
+      specularMap: specularMap,
+      specular: new THREE.Color(0x333333),
+      shininess: 25,
     });
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     scene.add(earth);
     
-    // Add continents as a separate geometry (simplified approach)
-    const continentGeometry = new THREE.SphereGeometry(80.2, 64, 64);
-    const continentMaterial = new THREE.MeshPhongMaterial({
-      color: 0x2E8B57, // Sea green for continents
+    // Clouds layer
+    const cloudsGeometry = new THREE.SphereGeometry(82, 64, 64);
+    const cloudsMaterial = new THREE.MeshPhongMaterial({
+      map: cloudsTexture,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.3,
     });
+    const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
+    scene.add(clouds);
     
-    // Create a simplified mask for continents (this is a simplified approach)
-    // In a real application you would use proper geojson data for continents
-    const continentMask = new THREE.Mesh(continentGeometry, continentMaterial);
-    
-    // Hide most of the continents by scaling small sections
-    // This is a simplified approach to show only India-like shape
-    const indiaShape = new THREE.SphereGeometry(80.3, 24, 24);
+    // India highlight
+    const indiaGeometry = new THREE.SphereGeometry(80.5, 32, 32);
     const indiaMaterial = new THREE.MeshPhongMaterial({
       color: 0x138808, // India green
-      transparent: false,
-      opacity: 1.0,
+      transparent: true,
+      opacity: 0.6,
     });
     
     // Position to approximate India's location
-    const india = new THREE.Mesh(indiaShape, indiaMaterial);
-    
-    // Convert approximate India coordinates to 3D position
     const indiaLat = 20; // Approximate latitude for India
     const indiaLong = 77; // Approximate longitude for India
     
     const phi = (90 - indiaLat) * (Math.PI / 180);
     const theta = (indiaLong + 180) * (Math.PI / 180);
     
-    // Scale to make India visible but not cover the entire globe
+    const india = new THREE.Mesh(indiaGeometry, indiaMaterial);
     india.scale.set(0.2, 0.2, 0.01);
     
     const x = -(80 * Math.sin(phi) * Math.cos(theta));
@@ -123,6 +123,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       const z = (80 * Math.sin(phi) * Math.sin(theta));
       const y = (80 * Math.cos(phi));
       
+      // Use size based on lawyer count with a minimum size
       const pointGeometry = new THREE.SphereGeometry(Math.log(city.lawyerCount) / 3 + 0.8, 16, 16);
       const pointMaterial = new THREE.MeshBasicMaterial({ 
         color: 0xFF9933, // Saffron from Indian flag
@@ -136,6 +137,20 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       scene.add(point);
       cityPoints.push(point);
       
+      // Add pulsing effect for each city point
+      const pulseMaterial = new THREE.MeshBasicMaterial({
+        color: 0xFF9933,
+        transparent: true,
+        opacity: 0.4
+      });
+      
+      const pulseGeometry = new THREE.SphereGeometry(Math.log(city.lawyerCount) / 3 + 1.5, 16, 16);
+      const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
+      pulse.position.set(x, y, z);
+      pulse.scale.set(1, 1, 1);
+      pulse.userData = { initialScale: 1, growFactor: 0.01 };
+      scene.add(pulse);
+      
       // Add city name label
       const cityNameDiv = document.createElement('div');
       cityNameDiv.className = 'absolute text-xs bg-white/80 px-1 py-0.5 rounded pointer-events-none opacity-0 transition-opacity';
@@ -145,7 +160,41 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
         tooltipRef.current.appendChild(cityNameDiv);
       }
       point.userData.label = cityNameDiv;
+      pulse.userData.isGrowing = true;
     });
+    
+    // Add a subtle glow effect
+    const glowGeometry = new THREE.SphereGeometry(84, 32, 32);
+    const glowMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        c: { value: 0.2 },
+        p: { value: 5.5 },
+        glowColor: { value: new THREE.Color(0x0077be) }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float c;
+        uniform float p;
+        uniform vec3 glowColor;
+        varying vec3 vNormal;
+        void main() {
+          float intensity = pow(c - dot(vNormal, vec3(0.0, 0.0, 1.0)), p);
+          gl_FragColor = vec4(glowColor, intensity);
+        }
+      `,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+    
+    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+    scene.add(glowMesh);
     
     // Raycaster for point interaction
     const raycaster = new THREE.Raycaster();
@@ -198,6 +247,37 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
+      
+      // Slow cloud rotation
+      clouds.rotation.y += 0.0002;
+      
+      // Animate city pulses
+      scene.children.forEach(child => {
+        if (child.userData && child.userData.growFactor) {
+          if (child.userData.isGrowing) {
+            child.scale.x += child.userData.growFactor;
+            child.scale.y += child.userData.growFactor;
+            child.scale.z += child.userData.growFactor;
+            
+            if (child.scale.x >= 1.5) {
+              child.userData.isGrowing = false;
+            }
+          } else {
+            child.scale.x -= child.userData.growFactor;
+            child.scale.y -= child.userData.growFactor;
+            child.scale.z -= child.userData.growFactor;
+            
+            if (child.scale.x <= child.userData.initialScale) {
+              child.userData.isGrowing = true;
+            }
+          }
+          
+          // Update opacity based on scale
+          const material = child.material as THREE.MeshBasicMaterial;
+          material.opacity = 0.7 - ((child.scale.x - child.userData.initialScale) / 2);
+        }
+      });
+      
       controls.update();
       renderer.render(scene, camera);
     };
@@ -207,6 +287,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     const autoRotate = () => {
       if (!controls.enabled) return;
       earth.rotation.y += 0.0005;
+      clouds.rotation.y += 0.0007;
     };
     
     // Start auto rotation
@@ -231,7 +312,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       
       renderer.domElement.removeEventListener('mousemove', onMouseMove);
       renderer.domElement.removeEventListener('click', onClick);
-      window.removeEventListener('resize', handleResize);
+      window.addEventListener('resize', handleResize);
       clearInterval(interval);
       
       // Clean up city labels
