@@ -14,9 +14,9 @@ const NavBar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <div className="h-10 w-10 rounded-full bg-gradient-to-r from-legal-primary to-legal-accent flex items-center justify-center">
-                <span className="text-white font-bold">BL</span>
+                <span className="text-white font-bold">LB</span>
               </div>
-              <span className="ml-2 text-xl font-serif font-bold text-legal-primary">Bharat Legal Globe</span>
+              <span className="ml-2 text-xl font-serif font-bold text-legal-primary">Legal Bharat</span>
             </Link>
           </div>
           

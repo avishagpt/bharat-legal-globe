@@ -1,7 +1,7 @@
 
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { IndianCity } from '@/types';
 
 interface GlobeProps {
@@ -18,7 +18,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     
     // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f5f5);
+    scene.background = new THREE.Color(0x000510);
     
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -52,21 +52,65 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
     
+    // Earth texture loader
+    const textureLoader = new THREE.TextureLoader();
+    
     // Earth geometry and material
     const earthGeometry = new THREE.SphereGeometry(80, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x0F2E68,  // Base color (blue)
+      color: 0x0077be, // Ocean blue
       shininess: 50,
       transparent: true,
       opacity: 0.9,
     });
+    
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     scene.add(earth);
     
-    // Add grid lines
-    const gridHelper = new THREE.GridHelper(200, 20, 0xffffff, 0xffffff);
-    gridHelper.position.y = -90;
-    scene.add(gridHelper);
+    // Add continents as a separate geometry (simplified approach)
+    const continentGeometry = new THREE.SphereGeometry(80.2, 64, 64);
+    const continentMaterial = new THREE.MeshPhongMaterial({
+      color: 0x2E8B57, // Sea green for continents
+      transparent: true,
+      opacity: 0.8,
+    });
+    
+    // Create a simplified mask for continents (this is a simplified approach)
+    // In a real application you would use proper geojson data for continents
+    const continentMask = new THREE.Mesh(continentGeometry, continentMaterial);
+    
+    // Hide most of the continents by scaling small sections
+    // This is a simplified approach to show only India-like shape
+    const indiaShape = new THREE.SphereGeometry(80.3, 24, 24);
+    const indiaMaterial = new THREE.MeshPhongMaterial({
+      color: 0x138808, // India green
+      transparent: false,
+      opacity: 1.0,
+    });
+    
+    // Position to approximate India's location
+    const india = new THREE.Mesh(indiaShape, indiaMaterial);
+    
+    // Convert approximate India coordinates to 3D position
+    const indiaLat = 20; // Approximate latitude for India
+    const indiaLong = 77; // Approximate longitude for India
+    
+    const phi = (90 - indiaLat) * (Math.PI / 180);
+    const theta = (indiaLong + 180) * (Math.PI / 180);
+    
+    // Scale to make India visible but not cover the entire globe
+    india.scale.set(0.2, 0.2, 0.01);
+    
+    const x = -(80 * Math.sin(phi) * Math.cos(theta));
+    const z = (80 * Math.sin(phi) * Math.sin(theta));
+    const y = (80 * Math.cos(phi));
+    
+    india.position.set(x, y, z);
+    
+    // Rotate to align with the globe surface
+    india.lookAt(0, 0, 0);
+    
+    scene.add(india);
     
     // Create a point for each city
     const cityPoints: THREE.Mesh[] = [];
@@ -79,9 +123,9 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       const z = (80 * Math.sin(phi) * Math.sin(theta));
       const y = (80 * Math.cos(phi));
       
-      const pointGeometry = new THREE.SphereGeometry(Math.log(city.lawyerCount) / 3 + 0.5, 16, 16);
+      const pointGeometry = new THREE.SphereGeometry(Math.log(city.lawyerCount) / 3 + 0.8, 16, 16);
       const pointMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xD4AF37,  // Gold color
+        color: 0xFF9933, // Saffron from Indian flag
         transparent: true,
         opacity: 0.9
       });
@@ -120,14 +164,14 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       const intersects = raycaster.intersectObjects(cityPoints);
       
       if (hoveredPoint) {
-        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xD4AF37);
+        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFF9933);
         hoveredPoint.userData.label.style.opacity = '0';
         hoveredPoint = null;
       }
       
       if (intersects.length > 0) {
         hoveredPoint = intersects[0].object as THREE.Mesh;
-        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xE57C23);
+        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
         
         if (hoveredPoint.userData.label) {
           const label = hoveredPoint.userData.label;
@@ -162,7 +206,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     // Slow auto rotation
     const autoRotate = () => {
       if (!controls.enabled) return;
-      earth.rotation.y += 0.001;
+      earth.rotation.y += 0.0005;
     };
     
     // Start auto rotation

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import Globe from '@/components/Globe';
 import { domainOfLawOptions, indianStates, majorCities, lawyers } from '@/data/mockData';
 import { IndianCity, Lawyer } from '@/types';
 import LawyerCard from '@/components/LawyerCard';
+import { prefetchProfileImages } from '@/services/ProfileImageService';
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState<IndianCity | null>(null);
@@ -18,6 +19,11 @@ const Index = () => {
   const popularLawyers = lawyers
     .sort((a, b) => b.review.rating - a.review.rating)
     .slice(0, 4);
+
+  // Prefetch profile images on component mount
+  useEffect(() => {
+    prefetchProfileImages();
+  }, []);
   
   const handleCitySelect = (city: IndianCity) => {
     setSelectedCity(city);
@@ -220,7 +226,7 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-legal-primary mb-4">
-                Why Choose Bharat Legal Globe
+                Why Choose Legal Bharat
               </h2>
               <p className="text-lg text-gray-600 max-w-3xl mx-auto">
                 We're committed to connecting you with the best legal representation across India.
@@ -274,7 +280,7 @@ const Index = () => {
               Ready to Find Your Legal Expert?
             </h2>
             <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-              Join thousands of clients who have found the right legal representation through Bharat Legal Globe.
+              Join thousands of clients who have found the right legal representation through Legal Bharat.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link to="/lawyers">

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,34 +10,64 @@ import Footer from '@/components/Footer';
 import { lawyers } from '@/data/mockData';
 import { Lawyer } from '@/types';
 import LawyerCard from '@/components/LawyerCard';
+import { getProfileImageByGender } from '@/services/ProfileImageService';
 
 const LawyerDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [lawyer, setLawyer] = useState<Lawyer | null>(null);
   const [similarLawyers, setSimilarLawyers] = useState<Lawyer[]>([]);
+  const [loadingImage, setLoadingImage] = useState(false);
   
   useEffect(() => {
     if (!id) return;
     
-    // Find the lawyer by ID
-    const foundLawyer = lawyers.find(l => l.id === id) || null;
-    setLawyer(foundLawyer);
-    
-    // Find similar lawyers (same domain, state, etc.)
-    if (foundLawyer) {
-      const similar = lawyers
-        .filter(l => 
-          l.id !== id && 
-          (
-            l.domainOfLaw.some(domain => foundLawyer.domainOfLaw.includes(domain)) ||
-            l.state === foundLawyer.state
-          )
-        )
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 3);
+    const fetchData = async () => {
+      // Find the lawyer by ID
+      const foundLawyer = lawyers.find(l => l.id === id) || null;
       
-      setSimilarLawyers(similar);
-    }
+      if (foundLawyer) {
+        setLoadingImage(true);
+        try {
+          // Get appropriate profile image based on gender from API
+          const imageUrl = await getProfileImageByGender(foundLawyer.gender);
+          foundLawyer.imageUrl = imageUrl;
+        } catch (error) {
+          console.error('Error loading profile image:', error);
+        } finally {
+          setLoadingImage(false);
+        }
+        
+        setLawyer(foundLawyer);
+        
+        // Find similar lawyers (same domain, state, etc.)
+        const similar = await Promise.all(
+          lawyers
+            .filter(l => 
+              l.id !== id && 
+              (
+                l.domainOfLaw.some(domain => foundLawyer.domainOfLaw.includes(domain)) ||
+                l.state === foundLawyer.state
+              )
+            )
+            .sort(() => 0.5 - Math.random())
+            .slice(0, 3)
+            .map(async (similarLawyer) => {
+              try {
+                // Get appropriate profile image for similar lawyers
+                const imageUrl = await getProfileImageByGender(similarLawyer.gender);
+                return { ...similarLawyer, imageUrl };
+              } catch (error) {
+                console.error('Error loading similar lawyer profile image:', error);
+                return similarLawyer;
+              }
+            })
+        );
+        
+        setSimilarLawyers(similar);
+      }
+    };
+    
+    fetchData();
   }, [id]);
   
   if (!lawyer) {
@@ -47,13 +76,19 @@ const LawyerDetailPage = () => {
         <NavBar />
         <main className="flex-1 flex items-center justify-center bg-gray-50">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-legal-primary mb-4">Lawyer Not Found</h2>
-            <p className="text-gray-600 mb-6">The lawyer you're looking for doesn't exist or has been removed.</p>
-            <Link to="/lawyers">
-              <Button className="bg-legal-primary hover:bg-legal-primary/90">
-                Browse All Lawyers
-              </Button>
-            </Link>
+            <h2 className="text-2xl font-bold text-legal-primary mb-4">
+              {loadingImage ? "Loading Lawyer Information..." : "Lawyer Not Found"}
+            </h2>
+            {!loadingImage && (
+              <>
+                <p className="text-gray-600 mb-6">The lawyer you're looking for doesn't exist or has been removed.</p>
+                <Link to="/lawyers">
+                  <Button className="bg-legal-primary hover:bg-legal-primary/90">
+                    Browse All Lawyers
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </main>
         <Footer />
