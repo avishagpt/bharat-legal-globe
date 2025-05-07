@@ -209,6 +209,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       
       raycaster.setFromCamera(mouse, camera);
       
+      // Fix: Ensure we only get Mesh objects that can have material property
       const intersects = raycaster.intersectObjects(cityPoints);
       
       if (hoveredPoint) {
@@ -223,20 +224,26 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       }
       
       if (intersects.length > 0) {
-        hoveredPoint = intersects[0].object as THREE.Mesh;
-        // Fix: Type check to ensure intersected object has material property
-        if (hoveredPoint.material instanceof THREE.Material) {
-          (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
-        }
+        // Fix: Ensure we cast to Mesh and verify it has the material property before accessing it
+        const intersectedObject = intersects[0].object;
         
-        if (hoveredPoint.userData && hoveredPoint.userData.label) {
-          const label = hoveredPoint.userData.label;
-          label.style.left = `${event.clientX}px`;
-          label.style.top = `${event.clientY - 30}px`;
-          label.style.opacity = '1';
+        // Verify it's a Mesh with material property
+        if (intersectedObject instanceof THREE.Mesh && intersectedObject.material) {
+          hoveredPoint = intersectedObject;
+          
+          if (hoveredPoint.material instanceof THREE.Material) {
+            (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
+          }
+          
+          if (hoveredPoint.userData && hoveredPoint.userData.label) {
+            const label = hoveredPoint.userData.label;
+            label.style.left = `${event.clientX}px`;
+            label.style.top = `${event.clientY - 30}px`;
+            label.style.opacity = '1';
+          }
+          
+          document.body.style.cursor = 'pointer';
         }
-        
-        document.body.style.cursor = 'pointer';
       } else {
         document.body.style.cursor = 'auto';
       }
