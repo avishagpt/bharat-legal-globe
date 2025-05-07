@@ -44,7 +44,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, locations, domains }) =
             <SelectValue placeholder="Select location" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Locations</SelectItem>
+            <SelectItem value="all_locations">All Locations</SelectItem>
             {locations.map((loc) => (
               <SelectItem key={loc} value={loc}>{loc}</SelectItem>
             ))}
@@ -58,7 +58,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, locations, domains }) =
             <SelectValue placeholder="Select practice area" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Practice Areas</SelectItem>
+            <SelectItem value="all_practice_areas">All Practice Areas</SelectItem>
             {domains.map((dom) => (
               <SelectItem key={dom} value={dom}>{dom}</SelectItem>
             ))}

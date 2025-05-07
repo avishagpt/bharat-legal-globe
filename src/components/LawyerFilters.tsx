@@ -113,7 +113,7 @@ const LawyerFilters: React.FC<LawyerFiltersProps> = ({
                     <SelectValue placeholder="Select a state" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All States</SelectItem>
+                    <SelectItem value="all_states">All States</SelectItem>
                     {filterOptions.states.map((state) => (
                       <SelectItem key={state} value={state}>
                         {state}
@@ -133,7 +133,7 @@ const LawyerFilters: React.FC<LawyerFiltersProps> = ({
                     <SelectValue placeholder="Select a city" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Cities</SelectItem>
+                    <SelectItem value="all_cities">All Cities</SelectItem>
                     {filterOptions.cities.map((city) => (
                       <SelectItem key={city} value={city}>
                         {city}

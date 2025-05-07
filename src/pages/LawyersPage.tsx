@@ -26,11 +26,11 @@ const LawyersPage = () => {
     const initFilters: Record<string, any> = {};
     
     if (searchParams.get('city')) {
-      initFilters.city = searchParams.get('city') || '';
+      initFilters.city = searchParams.get('city') || 'all_cities';
     }
     
     if (searchParams.get('state')) {
-      initFilters.state = searchParams.get('state') || '';
+      initFilters.state = searchParams.get('state') || 'all_states';
     }
     
     if (searchParams.get('domain')) {
@@ -67,7 +67,7 @@ const LawyersPage = () => {
     }
     
     // Apply location search
-    if (searchQuery.location) {
+    if (searchQuery.location && searchQuery.location !== 'all_locations') {
       results = results.filter(lawyer => 
         lawyer.city.toLowerCase() === searchQuery.location.toLowerCase() ||
         lawyer.state.toLowerCase() === searchQuery.location.toLowerCase()
@@ -75,7 +75,7 @@ const LawyersPage = () => {
     }
     
     // Apply domain search
-    if (searchQuery.domain) {
+    if (searchQuery.domain && searchQuery.domain !== 'all_practice_areas') {
       results = results.filter(lawyer => 
         lawyer.domainOfLaw.some(domain => 
           domain.toLowerCase() === searchQuery.domain.toLowerCase()
@@ -84,11 +84,11 @@ const LawyersPage = () => {
     }
     
     // Apply active filters
-    if (activeFilters.city) {
+    if (activeFilters.city && activeFilters.city !== 'all_cities') {
       results = results.filter(lawyer => lawyer.city === activeFilters.city);
     }
     
-    if (activeFilters.state) {
+    if (activeFilters.state && activeFilters.state !== 'all_states') {
       results = results.filter(lawyer => lawyer.state === activeFilters.state);
     }
     
