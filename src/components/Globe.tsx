@@ -199,7 +199,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     
-    let hoveredPoint: THREE.Mesh | null = null;
+    let hoveredPoint: THREE.Object3D | null = null;
     
     const onMouseMove = (event: MouseEvent) => {
       const rect = renderer.domElement.getBoundingClientRect();
@@ -231,7 +231,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
         if (intersectedObject instanceof THREE.Mesh && intersectedObject.material) {
           hoveredPoint = intersectedObject;
           
-          if (hoveredPoint.material instanceof THREE.Material) {
+          if (hoveredPoint instanceof THREE.Mesh && hoveredPoint.material instanceof THREE.Material) {
             (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
           }
           
