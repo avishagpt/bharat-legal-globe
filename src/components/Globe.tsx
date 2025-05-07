@@ -214,7 +214,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       
       if (hoveredPoint) {
         // Fix: Type check to ensure hoveredPoint has material property
-        if (hoveredPoint.material instanceof THREE.Material) {
+        if (hoveredPoint instanceof THREE.Mesh && hoveredPoint.material instanceof THREE.Material) {
           (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFF9933);
         }
         if (hoveredPoint.userData && hoveredPoint.userData.label) {
@@ -250,7 +250,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     };
     
     const onClick = (event: MouseEvent) => {
-      if (hoveredPoint && hoveredPoint.userData && hoveredPoint.userData.city) {
+      if (hoveredPoint && hoveredPoint instanceof THREE.Mesh && hoveredPoint.userData && hoveredPoint.userData.city) {
         onCitySelect(hoveredPoint.userData.city);
       }
     };
