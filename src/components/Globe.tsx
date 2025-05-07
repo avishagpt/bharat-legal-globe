@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -213,16 +212,24 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
       const intersects = raycaster.intersectObjects(cityPoints);
       
       if (hoveredPoint) {
-        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFF9933);
-        hoveredPoint.userData.label.style.opacity = '0';
+        // Fix: Type check to ensure hoveredPoint has material property
+        if (hoveredPoint.material instanceof THREE.Material) {
+          (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFF9933);
+        }
+        if (hoveredPoint.userData && hoveredPoint.userData.label) {
+          hoveredPoint.userData.label.style.opacity = '0';
+        }
         hoveredPoint = null;
       }
       
       if (intersects.length > 0) {
         hoveredPoint = intersects[0].object as THREE.Mesh;
-        (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
+        // Fix: Type check to ensure intersected object has material property
+        if (hoveredPoint.material instanceof THREE.Material) {
+          (hoveredPoint.material as THREE.MeshBasicMaterial).color.set(0xFFFFFF);
+        }
         
-        if (hoveredPoint.userData.label) {
+        if (hoveredPoint.userData && hoveredPoint.userData.label) {
           const label = hoveredPoint.userData.label;
           label.style.left = `${event.clientX}px`;
           label.style.top = `${event.clientY - 30}px`;
@@ -236,7 +243,7 @@ const Globe: React.FC<GlobeProps> = ({ cities, onCitySelect }) => {
     };
     
     const onClick = (event: MouseEvent) => {
-      if (hoveredPoint && hoveredPoint.userData.city) {
+      if (hoveredPoint && hoveredPoint.userData && hoveredPoint.userData.city) {
         onCitySelect(hoveredPoint.userData.city);
       }
     };
